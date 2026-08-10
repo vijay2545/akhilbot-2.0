@@ -1764,7 +1764,7 @@ function createWebApp() {
 
 function startWebApp() {
   const app = createWebApp();
-  app.listen(PORT, () => {
+  app.listen(PORT, "0.0.0.0", () => {
     const baseUrl = getPublicBaseUrl();
     console.log(`✅ Web panel running on port ${PORT}`);
     if (baseUrl) console.log(`✅ Colour panel URL: ${baseUrl}/panel`);
@@ -1876,21 +1876,40 @@ function applyActionLinks(config, text) {
 }
 
 async function telegram(method, payload = {}) {
-  const response = await fetch(`${API_BASE}/${method}`, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json"
-    },
-    body: JSON.stringify(payload)
-  });
+  let lastError;
+  for (let attempt = 1; attempt <= 3; attempt++) {
+    try {
+      const response = await fetch(`${API_BASE}/${method}`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify(payload)
+      });
 
-  const data = await response.json();
+      const data = await response.json();
 
-  if (!data.ok) {
-    throw new Error(`${method} failed: ${data.description}`);
+      if (!data.ok) {
+        throw new Error(`${method} failed: ${data.description}`);
+      }
+
+      return data.result;
+    } catch (error) {
+      lastError = error;
+      const isNetworkError =
+        error.message.includes("fetch failed") ||
+        error.code === "ECONNRESET" ||
+        error.code === "ETIMEDOUT" ||
+        error.code === "ENOTFOUND";
+
+      if (attempt < 3 && isNetworkError) {
+        await new Promise((resolve) => setTimeout(resolve, 1000 * attempt));
+        continue;
+      }
+      throw error;
+    }
   }
-
-  return data.result;
+  throw lastError;
 }
 
 async function loadBotProfile() {

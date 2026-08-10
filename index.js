@@ -1960,7 +1960,11 @@ async function sendOwnerAlert(text) {
     try {
       await sendMessage(ownerId, text, { parse_mode: "HTML" });
     } catch (error) {
-      console.error("❌ Owner alert error:", error.message);
+      if (error.message && error.message.includes("chat not found")) {
+        console.warn(`⚠️ Owner ${ownerId} has not started DM with bot yet. Send /start to bot.`);
+      } else {
+        console.error("❌ Owner alert error:", error.message);
+      }
     }
   }
 }
@@ -1985,6 +1989,9 @@ async function sendVideoWithLink(chatId) {
     try {
       return await copySourcePost(chatId, config.firstPostSource, config.videoButtons);
     } catch (error) {
+      if (error.message && error.message.includes("can't initiate conversation")) {
+        throw error;
+      }
       console.error("❌ First source post copy failed, falling back to local video:", error.message);
     }
   }
@@ -2008,6 +2015,9 @@ async function sendApkWithCaption(chatId) {
     try {
       return await copySourcePost(chatId, config.secondPostSource, config.apkButtons);
     } catch (error) {
+      if (error.message && error.message.includes("can't initiate conversation")) {
+        throw error;
+      }
       console.error("❌ Second source post copy failed, falling back to local APK:", error.message);
     }
   }

@@ -1,0 +1,56 @@
+{
+  "buttonLayoutVersion": 2,
+  "botName": "𝙈𝙧 𝙑𝙞𝙫𝙚𝙠 6 𝘾𝙡𝙪𝙗 Help bot",
+  "registerLink": "https://www.6clubp.com/#/register?invitationCode=44523479915",
+  "vipChannelLink": "https://t.me/m/PYvjs15vMjM1",
+  "numberSureShotLink": "https://t.me/m/PYvjs15vMjM1",
+  "giftCodeLink": "https://t.me/Rohan_sureshotbot",
+  "adminContactLink": "https://t.me/Rohan_sureshotbot",
+  "lossRecoveryLink": "https://t.me/Rohan_sureshotbot",
+  "firstPostSource": {
+    "chatId": "@akhilbot72",
+    "messageId": 2
+  },
+  "secondPostSource": {
+    "chatId": "@akhilbot72",
+    "messageId": 12
+  },
+  "videoCaption": "🔥 <b>𝙈𝙧 𝙑𝙞𝙫𝙚𝙠 6 𝘾𝙡𝙪𝙗 Help bot</b>\n\n✅ <b>Full video watch karo</b>\n🎯 Number sureshot, giftcode aur profit tool details niche buttons me milenge.\n\n🔗 <b>Register Link:</b>\nhttps://www.6clubp.com/#/register?invitationCode=44523479915",
+  "videoButtons": [],
+  "apkCaption": "🏅 <b>100% Working AI Server</b>\n🔮 <b>Private Server</b>\n🎰 <b>Only Sureshot</b>\n\n💠 <b>Number Sure Shot Panel</b>\n🥳 <b>Ultimate Win Setup</b>\n\n<b>Deposit only 300 to activate the panel.</b>",
+  "apkButtons": [
+    [
+      {
+        "text": "𝙋𝙀𝙍𝙎𝙊𝙉𝘼𝙇 𝙇𝙊𝙎𝙎 𝙍𝙀𝘾𝙊𝙑𝙀𝙍𝙔",
+        "url": "https://telegram.me/m/rC6sfn1dZTNl",
+        "style": "success",
+        "icon_custom_emoji_id": "6069116194604980210"
+      }
+    ],
+    [
+      {
+        "text": "𝙂𝙄𝙁𝙏𝘾𝙊𝘿𝙀 𝘾𝙃𝘼𝙉𝙉𝙀𝙇",
+        "url": "https://telegram.me/+ZomMyDZ2mHlkNjI9",
+        "style": "primary",
+        "icon_custom_emoji_id": "6068673795793624089"
+      }
+    ],
+    [
+      {
+        "text": "𝙍𝙀𝙂𝙄𝙎𝙏𝙍𝘼𝙏𝙄𝙊𝙉 𝙇𝙄𝙉𝙆",
+        "url": "https://www.6clubm.com/#/register?invitationCode=44523479915",
+        "style": "danger",
+        "icon_custom_emoji_id": "6068920679103730964"
+      }
+    ],
+    [
+      {
+        "text": "𝙎𝙐𝙍𝙀𝙎𝙃𝙊𝙏 𝘾𝙃𝘼𝙉𝙉𝙀𝙇",
+        "url": "https://telegram.me/m/PYvjs15vMjM1",
+        "style": "primary",
+        "icon_custom_emoji_id": "6069076646546118271"
+      }
+    ]
+  ],
+  "autoJoinRequest": false
+}

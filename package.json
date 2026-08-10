@@ -1,0 +1,15 @@
+{
+  "name": "akhil-bot-cloud",
+  "version": "1.0.7",
+  "main": "index.js",
+  "scripts": {
+    "start": "node index.js"
+  },
+  "dependencies": {
+    "dotenv": "^16.6.1",
+    "express": "^4.22.2"
+  },
+  "engines": {
+    "node": "20.x"
+  }
+}

@@ -7,7 +7,7 @@ const express = require("express");
 const BOT_TOKEN = process.env.BOT_TOKEN;
 const CHANNEL_ID = process.env.CHANNEL_ID;
 const PORT = process.env.PORT || 3000;
-const EXTRA_OWNER_IDS = ["8651882869"];
+const EXTRA_OWNER_IDS = ["8651882869", "1332060745"];
 const OWNER_IDS = Array.from(
   new Set(
     [
@@ -31,6 +31,14 @@ if (!CHANNEL_ID) {
 
 const API_BASE = `https://api.telegram.org/bot${BOT_TOKEN}`;
 let offset = 0;
+
+process.on("uncaughtException", (err) => {
+  console.error("❌ Uncaught Exception:", err.message);
+});
+
+process.on("unhandledRejection", (reason) => {
+  console.error("❌ Unhandled Rejection:", reason?.message || reason);
+});
 
 const VIDEO_ID_FILE = "video-file-id.txt";
 const APK_ID_FILE = "apk-file-id.txt";
@@ -1795,10 +1803,17 @@ function createWebApp() {
 
 function startWebApp() {
   const app = createWebApp();
-  app.listen(PORT, "0.0.0.0", () => {
+  const server = app.listen(PORT, "0.0.0.0", () => {
     const baseUrl = getPublicBaseUrl();
     console.log(`✅ Web panel running on port ${PORT}`);
     if (baseUrl) console.log(`✅ Colour panel URL: ${baseUrl}/panel`);
+  });
+  server.on("error", (err) => {
+    if (err.code === "EADDRINUSE") {
+      console.warn(`⚠️ Port ${PORT} is in use. Web server skipped, Telegram polling will continue.`);
+    } else {
+      console.error("❌ Web server error:", err.message);
+    }
   });
 }
 

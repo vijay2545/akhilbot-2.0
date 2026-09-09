@@ -4,3 +4,4 @@ bot-users.json
 reply-map.json
 *.backup.json
 bot-users.backup.*.json
+*.log

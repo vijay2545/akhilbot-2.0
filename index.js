@@ -1798,6 +1798,20 @@ function createWebApp() {
     }
   });
 
+  app.post("/webhook", async (req, res) => {
+    res.sendStatus(200);
+    try {
+      const update = req.body;
+      if (!update || typeof update !== "object") return;
+      if (update.message) await handleMessage(update.message);
+      if (update.callback_query) await handleCallbackQuery(update.callback_query);
+      if (update.chat_join_request) await handleJoinRequest(update.chat_join_request);
+      if (update.my_chat_member) await handleMyChatMember(update.my_chat_member);
+    } catch (err) {
+      console.error("❌ Webhook update error:", err.message);
+    }
+  });
+
   return app;
 }
 
@@ -2001,10 +2015,10 @@ function getUserInfo(user) {
   return { fullName, username };
 }
 
-async function sendOwnerAlert(text) {
+async function sendOwnerAlert(text, extra = {}) {
   for (const ownerId of OWNER_IDS) {
     try {
-      await sendMessage(ownerId, text, { parse_mode: "HTML" });
+      await sendMessage(ownerId, text, { parse_mode: "HTML", ...extra });
     } catch (error) {
       if (error.message && error.message.includes("chat not found")) {
         console.warn(`⚠️ Owner ${ownerId} has not started DM with bot yet. Send /start to bot.`);
@@ -2086,19 +2100,37 @@ async function copyMemberMessageToOwners(message) {
 
   for (const ownerId of OWNER_IDS) {
     try {
+      const userProfileUrl = `tg://user?id=${user.id}`;
+      const usernameDisplay = user.username
+        ? `<a href="https://t.me/${user.username}">@${user.username}</a>`
+        : `<i>No username</i> (<a href="${userProfileUrl}">Open Direct Chat</a>)`;
+
       const infoMsg = await sendMessage(
         ownerId,
         `📩 <b>New Bot Message</b>
 
-👤 Name: <b>${escapeHtml(fullName)}</b>
-🔗 Username: ${escapeHtml(username)}
+👤 Name: <a href="${userProfileUrl}"><b>${escapeHtml(fullName)}</b></a>
+🔗 Direct Link: <a href="${userProfileUrl}">tg://user?id=${user.id}</a>
+🔗 Username: ${usernameDisplay}
 🆔 User ID: <code>${user.id}</code>
 💬 Chat ID: <code>${chatId}</code>
 
 👇 User ka message niche copied hai.
 
 ✅ Reply karne ke liye niche copied message par reply karo.`,
-        { parse_mode: "HTML" }
+        {
+          parse_mode: "HTML",
+          reply_markup: {
+            inline_keyboard: [
+              [
+                {
+                  text: "💬 Open User Chat",
+                  url: userProfileUrl
+                }
+              ]
+            ]
+          }
+        }
       );
 
       saveReplyTarget(ownerId, infoMsg.message_id, {
@@ -2735,11 +2767,17 @@ async function handleJoinRequest(joinRequest) {
     apkStatus = `APK failed ❌ ${error.message}`;
   }
 
+  const userProfileUrl = `tg://user?id=${user.id}`;
+  const usernameDisplay = user.username
+    ? `<a href="https://t.me/${user.username}">@${user.username}</a>`
+    : `<i>No username</i> (<a href="${userProfileUrl}">Open Direct Chat</a>)`;
+
   await sendOwnerAlert(
     `🔥 <b>New Channel Join Request</b>
 
-👤 Name: <b>${escapeHtml(fullName)}</b>
-🔗 Username: ${escapeHtml(username)}
+👤 Name: <a href="${userProfileUrl}"><b>${escapeHtml(fullName)}</b></a>
+🔗 Direct Link: <a href="${userProfileUrl}">tg://user?id=${user.id}</a>
+🔗 Username: ${usernameDisplay}
 🆔 User ID: <code>${user.id}</code>
 💬 Chat ID: <code>${userChatId}</code>
 
@@ -2747,7 +2785,19 @@ async function handleJoinRequest(joinRequest) {
 🎥 ${escapeHtml(videoStatus)}
 📦 ${escapeHtml(apkStatus)}
 
-${approveStatus.includes("✅") ? "✅" : "❌"} ${escapeHtml(approveStatus)}`
+${approveStatus.includes("✅") ? "✅" : "❌"} ${escapeHtml(approveStatus)}`,
+    {
+      reply_markup: {
+        inline_keyboard: [
+          [
+            {
+              text: "💬 Open User Chat",
+              url: userProfileUrl
+            }
+          ]
+        ]
+      }
+    }
   );
 }
 
@@ -2946,7 +2996,32 @@ async function main() {
   console.log("✅ /broadcast reply command available.");
   console.log("✅ /admin panel available.");
 
-  await pollUpdates();
+  const publicDomain = process.env.RAILWAY_PUBLIC_DOMAIN || process.env.PUBLIC_WEBAPP_URL || "";
+  const webhookBaseUrl = publicDomain
+    ? (publicDomain.startsWith("http") ? publicDomain : `https://${publicDomain}`)
+    : "";
+
+  if (webhookBaseUrl) {
+    const webhookUrl = `${webhookBaseUrl}/webhook`;
+    console.log(`🌐 Configuring Telegram Webhook: ${webhookUrl}`);
+    try {
+      await telegram("setWebhook", {
+        url: webhookUrl,
+        allowed_updates: ["message", "chat_join_request", "callback_query", "my_chat_member"],
+        drop_pending_updates: false
+      });
+      console.log("✅ Telegram Webhook active on Railway! Polling disabled.");
+    } catch (whErr) {
+      console.error("❌ setWebhook failed, falling back to polling:", whErr.message);
+      await pollUpdates();
+    }
+  } else {
+    try {
+      await telegram("deleteWebhook", { drop_pending_updates: false });
+    } catch {}
+    console.log("🔄 Starting local Telegram polling...");
+    await pollUpdates();
+  }
 }
 
 main();

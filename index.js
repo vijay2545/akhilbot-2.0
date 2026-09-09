@@ -45,6 +45,8 @@ const TELEGRAM_TEXT_LIMIT = 3900;
 
 const DEFAULT_CONFIG = {
   botName: "𝙈𝙧 𝙑𝙞𝙫𝙚𝙠 6 𝘾𝙡𝙪𝙗 Help bot",
+  channelId: "",
+  channelInviteLink: "https://t.me/+Ls75cJMUhKxjZTRl",
   registerLink: "https://www.6clubp.com/#/register?invitationCode=44523479915",
   vipChannelLink: "https://t.me/m/PYvjs15vMjM1",
   numberSureShotLink: "https://t.me/m/PYvjs15vMjM1",
@@ -654,7 +656,29 @@ function vjIsPrivateChat(chat, user) {
 }
 
 function vjLoadBotUsers() {
-  return loadJson("bot-users.json", {});
+  let users = loadJson("bot-users.json", {});
+  if (!users || typeof users !== "object" || Object.keys(users).length === 0) {
+    for (const fallbackFile of ["all-users-live.json", "bot-users.merged.backup.json", "recovered-users.json"]) {
+      if (fs.existsSync(fallbackFile)) {
+        try {
+          const loaded = JSON.parse(fs.readFileSync(fallbackFile, "utf8"));
+          if (Array.isArray(loaded)) {
+            users = {};
+            for (const u of loaded) {
+              if (u && u.id) users[String(u.id)] = u;
+            }
+          } else if (loaded && typeof loaded === "object") {
+            users = loaded;
+          }
+          if (Object.keys(users).length > 0) {
+            saveJson("bot-users.json", users);
+            break;
+          }
+        } catch {}
+      }
+    }
+  }
+  return users || {};
 }
 
 function vjSaveBotUsers(users) {
@@ -921,7 +945,7 @@ Failed: ${failed}`
 // VJ_STATS_BROADCAST_HELPERS_END
 
 
-let botUsers = loadJson(BOT_USERS_FILE, {});
+let botUsers = vjLoadBotUsers();
 
 function saveBotUsers() {
   saveJson(BOT_USERS_FILE, botUsers);
@@ -1232,6 +1256,8 @@ function loadConfig() {
 
   return {
     buttonLayoutVersion: 2,
+    channelId: saved.channelId || process.env.CHANNEL_ID || "",
+    channelInviteLink: saved.channelInviteLink || DEFAULT_CONFIG.channelInviteLink,
     botName: saved.botName || DEFAULT_CONFIG.botName,
     registerLink: saved.registerLink || DEFAULT_CONFIG.registerLink,
     vipChannelLink: saved.vipChannelLink || DEFAULT_CONFIG.vipChannelLink,
@@ -1249,6 +1275,11 @@ function loadConfig() {
       : DEFAULT_CONFIG.apkButtons,
     autoJoinRequest: saved.autoJoinRequest !== undefined ? Boolean(saved.autoJoinRequest) : false
   };
+}
+
+function getChannelId() {
+  const cfg = loadConfig();
+  return cfg.channelId || process.env.CHANNEL_ID || "";
 }
 
 function saveConfig(config) {
@@ -2315,6 +2346,8 @@ async function showCurrentConfig(chatId) {
     chatId,
     `📄 <b>Current Config</b>
 
+📢 <b>Active Channel ID:</b> <code>${getChannelId()}</code>
+🔗 <b>Channel Link:</b> <code>${config.channelInviteLink || "None"}</code>
 ⚡ <b>Auto Join Request:</b> <code>${config.autoJoinRequest ? "ON (Enabled)" : "OFF (Disabled)"}</code>
 
 🎥 <b>Video Buttons:</b>
@@ -2628,8 +2661,9 @@ async function handleJoinRequest(joinRequest) {
   console.log("🔥 JOIN REQUEST RECEIVED:");
   console.log(JSON.stringify(joinRequest, null, 2));
 
-  if (String(chat.id) !== String(CHANNEL_ID)) {
-    console.log("⚠️ Wrong channel skipped:", chat.id, "expected:", CHANNEL_ID);
+  const activeChannelId = getChannelId();
+  if (activeChannelId && String(chat.id) !== String(activeChannelId)) {
+    console.log("⚠️ Wrong channel skipped:", chat.id, "expected:", activeChannelId);
     return;
   }
 
@@ -2740,6 +2774,38 @@ async function handleMessage(message) {
       return;
     }
 
+    if (message.forward_from_chat || message.forward_origin?.chat) {
+      const fChat = message.forward_from_chat || message.forward_origin?.chat;
+      await sendMessage(
+        message.chat.id,
+        `📢 <b>Channel Detected:</b>\n\nTitle: <b>${escapeHtml(fChat.title || "Unknown")}</b>\nID: <code>${fChat.id}</code>\nUsername: ${fChat.username ? "@" + fChat.username : "None"}\n\nIse primary channel banane ke liye ye command bhein:\n<code>/setchannel ${fChat.id}</code>`
+      );
+      return;
+    }
+
+    if (vjIsCommand(text, "/setchannel")) {
+      const parts = text.split(/\s+/);
+      const targetId = parts[1];
+      if (!targetId || !/^-?\d+$/.test(targetId)) {
+        await sendMessage(
+          message.chat.id,
+          `❌ <b>Usage:</b> <code>/setchannel &lt;channel_id&gt;</code>\n\nExample: <code>/setchannel -1002151560609</code>\n\n<i>Current Channel ID: <code>${getChannelId()}</code></i>`
+        );
+        return;
+      }
+      const cfg = loadConfig();
+      cfg.channelId = targetId;
+      saveConfig(cfg);
+      await sendMessage(
+        message.chat.id,
+        `✅ <b>Channel Successfully Updated!</b>\n\nNew Channel ID: <code>${targetId}</code>\nAb join requests is channel se accept hongi.`
+      );
+      await sendOwnerAlert(
+        `📢 Primary channel ID updated to <code>${targetId}</code> by <b>${escapeHtml(message.from.first_name || message.from.id)}</b>`
+      );
+      return;
+    }
+
     const stateHandled = await handleAdminState(message);
     if (stateHandled) return;
 
@@ -2811,13 +2877,27 @@ Admin ko aapka message mil gaya hai.`
   }
 }
 
+async function handleMyChatMember(myChatMember) {
+  try {
+    const chat = myChatMember.chat;
+    const newStatus = myChatMember.new_chat_member?.status;
+    console.log(`🔥 MY_CHAT_MEMBER update: ${chat.title} (${chat.id}) status: ${newStatus}`);
+    if (newStatus === "administrator") {
+      const alert = `📢 <b>Bot Added as Admin!</b>\n\nChannel: <b>${escapeHtml(chat.title)}</b>\nChannel ID: <code>${chat.id}</code>\n\nIs channel ko primary bot channel banane ke liye:\n<code>/setchannel ${chat.id}</code> bhein.`;
+      await sendOwnerAlert(alert);
+    }
+  } catch (error) {
+    console.error("❌ handleMyChatMember error:", error.message);
+  }
+}
+
 async function pollUpdates() {
   while (true) {
     try {
       const updates = await telegram("getUpdates", {
         offset,
         timeout: 5,
-        allowed_updates: ["message", "chat_join_request", "callback_query"]
+        allowed_updates: ["message", "chat_join_request", "callback_query", "my_chat_member"]
       });
 
       for (const update of updates) {
@@ -2826,6 +2906,7 @@ async function pollUpdates() {
         if (update.message) await handleMessage(update.message);
         if (update.callback_query) await handleCallbackQuery(update.callback_query);
         if (update.chat_join_request) await handleJoinRequest(update.chat_join_request);
+        if (update.my_chat_member) await handleMyChatMember(update.my_chat_member);
       }
     } catch (error) {
       console.error("Polling error:", error.message);

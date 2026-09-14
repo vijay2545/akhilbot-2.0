@@ -118,7 +118,29 @@ https://www.6clubp.com/#/register?invitationCode=44523479915`,
   autoJoinRequest: false,
   vipMessage: `🟢 <b>SURESHORT PRIVATE VIP CHANNEL</b> 🟢\n━━━━━━━━━━━━━━━━━━━━━━\n🔔 <b>LIMITED ENTRY FREE</b> 🔔\n\nAapke liye VIP Channel ki exclusive entry open hai.\nDaily accurate signals aur sureshots ke liye niche click karein:\n\n🔴 <b>LIVE SIGNALS & PREDICTIONS</b> 🔴`,
   lossRecoveryMessage: `💼 <b>PERSONAL 100% LOSS RECOVERY</b> 💼\n━━━━━━━━━━━━━━━━━━━━━━\nAgar aapka kisi bhi platform ya game me loss hua hai, to recovery ke liye direct Admin se connect karein.\n\n✅ 1-on-1 Personal Guidance\n✅ Capital Management & Strategy\n✅ Safe Daily Target Setup\n\n👇 <b>Niche diye gaye button par click karein:</b>`,
-  privateHackMessage: `⚡ <b>PRIVATE HACK & AI SERVER ACCESS</b> ⚡\n━━━━━━━━━━━━━━━━━━━━━━\n🏅 <b>100% Working AI Algorithm</b>\n🔮 <b>Number Sureshot Prediction Tool</b>\n🎰 <b>Live Accurate Trend Signals</b>\n\n1️⃣ <b>Step 1:</b> Niche button se official new account register karein:\n2️⃣ <b>Step 2:</b> Minimum ₹300 deposit karke ID activate karein.\n3️⃣ <b>Step 3:</b> Deposit screenshot bot me bhejein, aapko hack panel access mil jayega.`
+  privateHackMessage: `⚡ <b>PRIVATE HACK & AI SERVER ACCESS</b> ⚡\n━━━━━━━━━━━━━━━━━━━━━━\n🏅 <b>100% Working AI Algorithm</b>\n🔮 <b>Number Sureshot Prediction Tool</b>\n🎰 <b>Live Accurate Trend Signals</b>\n\n1️⃣ <b>Step 1:</b> Niche button se official new account register karein:\n2️⃣ <b>Step 2:</b> Minimum ₹300 deposit karke ID activate karein.\n3️⃣ <b>Step 3:</b> Deposit screenshot bot me bhejein, aapko hack panel access mil jayega.`,
+  menuButtonNames: {
+    vip: "💎 𝙅𝙊𝙄𝙉 𝙑𝙄𝙋",
+    loss: "💼 𝙇𝙊𝙎𝙎 𝙍𝙀𝘾𝙊𝙑𝙀𝙍𝙔",
+    hack: "⚡ 𝙋𝙍𝙄𝙑𝘼𝙏𝙀 𝙃𝘼𝘾𝙆"
+  },
+  menuInlineButtons: {
+    vip: {
+      text: "👉 JOIN VIP TELEGRAM ↗",
+      style: "primary",
+      icon_custom_emoji_id: "6069076646546118271"
+    },
+    loss: {
+      text: "💬 CONTACT RECOVERY ADMIN ↗",
+      style: "success",
+      icon_custom_emoji_id: "6069116194604980210"
+    },
+    hack: {
+      text: "🎰 REGISTER ACCOUNT ↗",
+      style: "danger",
+      icon_custom_emoji_id: "6068920679103730964"
+    }
+  }
 };
 
 const adminStates = new Map();
@@ -1287,7 +1309,17 @@ function loadConfig() {
     autoJoinRequest: saved.autoJoinRequest !== undefined ? Boolean(saved.autoJoinRequest) : false,
     vipMessage: saved.vipMessage || DEFAULT_CONFIG.vipMessage,
     lossRecoveryMessage: saved.lossRecoveryMessage || DEFAULT_CONFIG.lossRecoveryMessage,
-    privateHackMessage: saved.privateHackMessage || DEFAULT_CONFIG.privateHackMessage
+    privateHackMessage: saved.privateHackMessage || DEFAULT_CONFIG.privateHackMessage,
+    menuButtonNames: {
+      vip: (saved.menuButtonNames && saved.menuButtonNames.vip) || DEFAULT_CONFIG.menuButtonNames.vip,
+      loss: (saved.menuButtonNames && saved.menuButtonNames.loss) || DEFAULT_CONFIG.menuButtonNames.loss,
+      hack: (saved.menuButtonNames && saved.menuButtonNames.hack) || DEFAULT_CONFIG.menuButtonNames.hack
+    },
+    menuInlineButtons: {
+      vip: (saved.menuInlineButtons && saved.menuInlineButtons.vip) || DEFAULT_CONFIG.menuInlineButtons.vip,
+      loss: (saved.menuInlineButtons && saved.menuInlineButtons.loss) || DEFAULT_CONFIG.menuInlineButtons.loss,
+      hack: (saved.menuInlineButtons && saved.menuInlineButtons.hack) || DEFAULT_CONFIG.menuInlineButtons.hack
+    }
   };
 }
 
@@ -1519,10 +1551,12 @@ function colourPanelKeyboard() {
 }
 
 function userReplyKeyboard(isAdminTesting = false) {
+  const cfg = loadConfig();
+  const names = cfg.menuButtonNames || DEFAULT_CONFIG.menuButtonNames;
   const keyboard = [
-    [{ text: "JOIN VIP" }],
-    [{ text: "LOSS RECOVERY" }],
-    [{ text: "PRIVATE HACK" }]
+    [{ text: names.vip || "💎 𝙅𝙊𝙄𝙉 𝙑𝙄𝙋" }],
+    [{ text: names.loss || "💼 𝙇𝙊𝙎𝙎 𝙍𝙀𝘾𝙊𝙑𝙀𝙍𝙔" }],
+    [{ text: names.hack || "⚡ 𝙋𝙍𝙄𝙑𝘼𝙏𝙀 𝙃𝘼𝘾𝙆" }]
   ];
 
   if (isAdminTesting) {
@@ -1551,65 +1585,82 @@ function adminReplyKeyboard() {
 async function handleUserButtonPress(message, text) {
   const clean = String(text || "").trim().toUpperCase();
   const config = loadConfig();
+  const names = config.menuButtonNames || DEFAULT_CONFIG.menuButtonNames;
+  const inlineBtns = config.menuInlineButtons || DEFAULT_CONFIG.menuInlineButtons;
 
   // 1. JOIN VIP
-  if (clean === "JOIN VIP" || clean.includes("JOIN VIP") || clean === "VIP") {
+  const vipName = String(names.vip || "").trim().toUpperCase();
+  if (clean === "JOIN VIP" || clean.includes("JOIN VIP") || clean.includes("VIP") || (vipName && clean === vipName)) {
     const vipUrl = safeLink(config.vipChannelLink, config.channelInviteLink || "https://t.me/+gVNRVJTtpmc2MmE9");
     const vipText = config.vipMessage || DEFAULT_CONFIG.vipMessage;
+    const btn = inlineBtns.vip || DEFAULT_CONFIG.menuInlineButtons.vip;
     await sendMessage(
       message.chat.id,
       vipText,
       {
         parse_mode: "HTML",
-        reply_markup: {
-          inline_keyboard: [
-            [
-              { text: "👉 JOIN VIP TELEGRAM ↗", url: vipUrl }
-            ]
+        reply_markup: makeKeyboard([
+          [
+            {
+              text: btn.text || "👉 JOIN VIP TELEGRAM ↗",
+              url: vipUrl,
+              style: btn.style || "primary",
+              icon_custom_emoji_id: btn.icon_custom_emoji_id || ""
+            }
           ]
-        }
+        ])
       }
     );
     return true;
   }
 
   // 2. LOSS RECOVERY
-  if (clean === "LOSS RECOVERY" || clean.includes("LOSS RECOVERY")) {
+  const lossName = String(names.loss || "").trim().toUpperCase();
+  if (clean === "LOSS RECOVERY" || clean.includes("LOSS RECOVERY") || clean.includes("LOSS") || (lossName && clean === lossName)) {
     const lossUrl = safeLink(config.lossRecoveryLink, config.adminContactLink || "https://t.me/Rohan_sureshotbot");
     const lossText = config.lossRecoveryMessage || DEFAULT_CONFIG.lossRecoveryMessage;
+    const btn = inlineBtns.loss || DEFAULT_CONFIG.menuInlineButtons.loss;
     await sendMessage(
       message.chat.id,
       lossText,
       {
         parse_mode: "HTML",
-        reply_markup: {
-          inline_keyboard: [
-            [
-              { text: "💬 CONTACT RECOVERY ADMIN ↗", url: lossUrl }
-            ]
+        reply_markup: makeKeyboard([
+          [
+            {
+              text: btn.text || "💬 CONTACT RECOVERY ADMIN ↗",
+              url: lossUrl,
+              style: btn.style || "success",
+              icon_custom_emoji_id: btn.icon_custom_emoji_id || ""
+            }
           ]
-        }
+        ])
       }
     );
     return true;
   }
 
   // 3. PRIVATE HACK
-  if (clean === "PRIVATE HACK" || clean.includes("PRIVATE HACK") || clean.includes("HACK")) {
+  const hackName = String(names.hack || "").trim().toUpperCase();
+  if (clean === "PRIVATE HACK" || clean.includes("PRIVATE HACK") || clean.includes("HACK") || (hackName && clean === hackName)) {
     const regUrl = safeLink(config.registerLink, "https://www.6clubp.com/#/register?invitationCode=44523479915");
     const hackText = config.privateHackMessage || DEFAULT_CONFIG.privateHackMessage;
+    const btn = inlineBtns.hack || DEFAULT_CONFIG.menuInlineButtons.hack;
     await sendMessage(
       message.chat.id,
       hackText,
       {
         parse_mode: "HTML",
-        reply_markup: {
-          inline_keyboard: [
-            [
-              { text: "🎰 REGISTER ACCOUNT ↗", url: regUrl }
-            ]
+        reply_markup: makeKeyboard([
+          [
+            {
+              text: btn.text || "🎰 REGISTER ACCOUNT ↗",
+              url: regUrl,
+              style: btn.style || "danger",
+              icon_custom_emoji_id: btn.icon_custom_emoji_id || ""
+            }
           ]
-        }
+        ])
       }
     );
     return true;
@@ -2427,6 +2478,9 @@ function adminKeyboard(config = loadConfig()) {
         { text: "💬 Edit Menu Messages (VIP / Recovery / Hack)", callback_data: "edit_menu_messages" }
       ],
       [
+        { text: "🎨 Edit Button Names, Colours & Emojis", callback_data: "edit_buttons_style" }
+      ],
+      [
         { text: "🔥 Edit Action Links", callback_data: "edit_action_links" }
       ],
       [
@@ -2678,6 +2732,113 @@ async function handleCallbackQuery(callbackQuery) {
     return;
   }
 
+  if (data === "edit_buttons_style") {
+    await sendMessage(
+      chatId,
+      `🎨 <b>Edit Button Names, Colours & Emojis</b>\n\nKya edit karna chahte hain? Niche select karein:`,
+      {
+        parse_mode: "HTML",
+        reply_markup: {
+          inline_keyboard: [
+            [{ text: "🔘 Edit Bottom 3 Button Names", callback_data: "edit_bottom_names" }],
+            [{ text: "🔵 Edit VIP Inline Button (Colour/Emoji)", callback_data: "edit_vip_btn" }],
+            [{ text: "🟢 Edit Loss Recovery Inline Button (Colour/Emoji)", callback_data: "edit_loss_btn" }],
+            [{ text: "🔴 Edit Private Hack Inline Button (Colour/Emoji)", callback_data: "edit_hack_btn" }],
+            [{ text: "🔙 Back to Admin Panel", callback_data: "back_to_admin" }]
+          ]
+        }
+      }
+    );
+    return;
+  }
+
+  if (data === "edit_bottom_names") {
+    adminStates.set(String(userId), "bottom_names");
+    const cfg = loadConfig();
+    const names = cfg.menuButtonNames || DEFAULT_CONFIG.menuButtonNames;
+    await sendMessage(
+      chatId,
+      `🔘 <b>Edit Bottom Menu Button Names</b>\n\n` +
+      `<b>Current Names:</b>\n` +
+      `1️⃣ VIP: <code>${escapeHtml(names.vip)}</code>\n` +
+      `2️⃣ Loss: <code>${escapeHtml(names.loss)}</code>\n` +
+      `3️⃣ Hack: <code>${escapeHtml(names.hack)}</code>\n\n` +
+      `👉 <b>Naye 3 button names bhejo is format me:</b>\n` +
+      `<code>VIP Name | Loss Name | Hack Name</code>\n\n` +
+      `<i>Example:</i>\n` +
+      `<code>💎 𝙅𝙊𝙄𝙉 𝙑𝙄𝙋 | 💼 𝙇𝙊𝙎𝙎 𝙍𝙀𝘾𝙊𝙑𝙀𝙍𝙔 | ⚡ 𝙋𝙍𝙄𝙑𝘼𝙏𝙀 𝙃𝘼𝘾𝙆</code>\n\n` +
+      `Cancel: <code>/cancel</code>`,
+      { parse_mode: "HTML" }
+    );
+    return;
+  }
+
+  if (data === "edit_vip_btn") {
+    adminStates.set(String(userId), "vip_btn");
+    const cfg = loadConfig();
+    const btn = (cfg.menuInlineButtons && cfg.menuInlineButtons.vip) || DEFAULT_CONFIG.menuInlineButtons.vip;
+    await sendMessage(
+      chatId,
+      `🔵 <b>Edit VIP Inline Button</b>\n\n` +
+      `<b>Current Button:</b>\n` +
+      `Text: <code>${escapeHtml(btn.text)}</code>\n` +
+      `Style: <code>${escapeHtml(btn.style || "primary")}</code> (blue/success/danger)\n` +
+      `Custom Emoji ID: <code>${escapeHtml(btn.icon_custom_emoji_id || "None")}</code>\n\n` +
+      `👉 <b>Naya format bhejo:</b>\n` +
+      `<code>Button Text | style | customEmojiId</code>\n\n` +
+      `Styles: <code>primary</code> (blue), <code>success</code> (green), <code>danger</code> (red)\n` +
+      `<i>Example:</i>\n` +
+      `<code>👉 JOIN VIP TELEGRAM ↗ | primary | 6069076646546118271</code>\n\n` +
+      `Cancel: <code>/cancel</code>`,
+      { parse_mode: "HTML" }
+    );
+    return;
+  }
+
+  if (data === "edit_loss_btn") {
+    adminStates.set(String(userId), "loss_btn");
+    const cfg = loadConfig();
+    const btn = (cfg.menuInlineButtons && cfg.menuInlineButtons.loss) || DEFAULT_CONFIG.menuInlineButtons.loss;
+    await sendMessage(
+      chatId,
+      `🟢 <b>Edit Loss Recovery Inline Button</b>\n\n` +
+      `<b>Current Button:</b>\n` +
+      `Text: <code>${escapeHtml(btn.text)}</code>\n` +
+      `Style: <code>${escapeHtml(btn.style || "success")}</code> (blue/success/danger)\n` +
+      `Custom Emoji ID: <code>${escapeHtml(btn.icon_custom_emoji_id || "None")}</code>\n\n` +
+      `👉 <b>Naya format bhejo:</b>\n` +
+      `<code>Button Text | style | customEmojiId</code>\n\n` +
+      `Styles: <code>primary</code> (blue), <code>success</code> (green), <code>danger</code> (red)\n` +
+      `<i>Example:</i>\n` +
+      `<code>💬 CONTACT RECOVERY ADMIN ↗ | success | 6069116194604980210</code>\n\n` +
+      `Cancel: <code>/cancel</code>`,
+      { parse_mode: "HTML" }
+    );
+    return;
+  }
+
+  if (data === "edit_hack_btn") {
+    adminStates.set(String(userId), "hack_btn");
+    const cfg = loadConfig();
+    const btn = (cfg.menuInlineButtons && cfg.menuInlineButtons.hack) || DEFAULT_CONFIG.menuInlineButtons.hack;
+    await sendMessage(
+      chatId,
+      `🔴 <b>Edit Private Hack Inline Button</b>\n\n` +
+      `<b>Current Button:</b>\n` +
+      `Text: <code>${escapeHtml(btn.text)}</code>\n` +
+      `Style: <code>${escapeHtml(btn.style || "danger")}</code> (blue/success/danger)\n` +
+      `Custom Emoji ID: <code>${escapeHtml(btn.icon_custom_emoji_id || "None")}</code>\n\n` +
+      `👉 <b>Naya format bhejo:</b>\n` +
+      `<code>Button Text | style | customEmojiId</code>\n\n` +
+      `Styles: <code>primary</code> (blue), <code>success</code> (green), <code>danger</code> (red)\n` +
+      `<i>Example:</i>\n` +
+      `<code>🎰 REGISTER ACCOUNT ↗ | danger | 6068920679103730964</code>\n\n` +
+      `Cancel: <code>/cancel</code>`,
+      { parse_mode: "HTML" }
+    );
+    return;
+  }
+
   if (data === "edit_action_links") {
     adminStates.set(String(userId), "action_links");
     await sendMessage(chatId, formatLinksHelp(loadConfig()), { parse_mode: "HTML" });
@@ -2792,6 +2953,49 @@ async function handleAdminState(message) {
     if (state === "vip_msg") config.vipMessage = text;
     if (state === "loss_msg") config.lossRecoveryMessage = text;
     if (state === "hack_msg") config.privateHackMessage = text;
+
+    if (state === "bottom_names") {
+      const parts = text.split("|").map((s) => s.trim());
+      if (parts.length < 3) throw new Error("Format galat hai. VIP Name | Loss Name | Hack Name hona chahiye.");
+      config.menuButtonNames = {
+        vip: parts[0],
+        loss: parts[1],
+        hack: parts[2]
+      };
+    }
+
+    if (state === "vip_btn") {
+      const parts = text.split("|").map((s) => s.trim());
+      if (!parts[0]) throw new Error("Button text missing hai.");
+      config.menuInlineButtons = config.menuInlineButtons || {};
+      config.menuInlineButtons.vip = {
+        text: parts[0],
+        style: parts[1] || "primary",
+        icon_custom_emoji_id: parts[2] || ""
+      };
+    }
+
+    if (state === "loss_btn") {
+      const parts = text.split("|").map((s) => s.trim());
+      if (!parts[0]) throw new Error("Button text missing hai.");
+      config.menuInlineButtons = config.menuInlineButtons || {};
+      config.menuInlineButtons.loss = {
+        text: parts[0],
+        style: parts[1] || "success",
+        icon_custom_emoji_id: parts[2] || ""
+      };
+    }
+
+    if (state === "hack_btn") {
+      const parts = text.split("|").map((s) => s.trim());
+      if (!parts[0]) throw new Error("Button text missing hai.");
+      config.menuInlineButtons = config.menuInlineButtons || {};
+      config.menuInlineButtons.hack = {
+        text: parts[0],
+        style: parts[1] || "danger",
+        icon_custom_emoji_id: parts[2] || ""
+      };
+    }
 
     saveConfig(config);
     adminStates.delete(userId);

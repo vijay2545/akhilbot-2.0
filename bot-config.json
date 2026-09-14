@@ -79,5 +79,13 @@
       "style": "danger",
       "icon_custom_emoji_id": "6068920679103730964"
     }
-  }
+  },
+  "thirdPostSource": null,
+  "thirdPostCaption": "⚡ <b>VIP ACCESS & CHANNEL APPROVAL</b> ⚡\n━━━━━━━━━━━━━━━━━━━━━━\n🔔 <b>LIMITED PERMANENT ENTRY FREE</b> 🔔\n\nAapki VIP entry request receive ho gayi hai.\nNiche diye gaye button par click karke turant apni entry <b>Approve</b> karein aur official permanent VIP member banein:\n\n👇 <b>Click Button Below To Approve:</b>",
+  "approveButton": {
+    "text": "✅ APPROVE VIP ACCESS ↗",
+    "style": "success",
+    "icon_custom_emoji_id": "6069116194604980210"
+  },
+  "approvedSuccessMessage": "🎉 <b>CONGRATULATIONS!</b>\n━━━━━━━━━━━━━━━━━━━━━━\n✅ <b>Aapki VIP Entry Successfully Approve Ho Gayi Hai!</b>\n\nAb aap hamare official permanent VIP member ban gaye hain. Sabhi exclusive sureshots aur VIP access ke liye niche diye gaye buttons use karein."
 }

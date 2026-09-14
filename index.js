@@ -140,7 +140,15 @@ https://www.6clubp.com/#/register?invitationCode=44523479915`,
       style: "danger",
       icon_custom_emoji_id: "6068920679103730964"
     }
-  }
+  },
+  thirdPostSource: null,
+  thirdPostCaption: `⚡ <b>VIP ACCESS & CHANNEL APPROVAL</b> ⚡\n━━━━━━━━━━━━━━━━━━━━━━\n🔔 <b>LIMITED PERMANENT ENTRY FREE</b> 🔔\n\nAapki VIP entry request receive ho gayi hai.\nNiche diye gaye button par click karke turant apni entry <b>Approve</b> karein aur official permanent VIP member banein:\n\n👇 <b>Click Button Below To Approve:</b>`,
+  approveButton: {
+    text: "✅ APPROVE VIP ACCESS ↗",
+    style: "success",
+    icon_custom_emoji_id: "6069116194604980210"
+  },
+  approvedSuccessMessage: `🎉 <b>CONGRATULATIONS!</b>\n━━━━━━━━━━━━━━━━━━━━━━\n✅ <b>Aapki VIP Entry Successfully Approve Ho Gayi Hai!</b>\n\nAb aap hamare official permanent VIP member ban gaye hain. Sabhi exclusive sureshots aur VIP access ke liye niche diye gaye buttons use karein.`
 };
 
 const adminStates = new Map();
@@ -1319,7 +1327,11 @@ function loadConfig() {
       vip: (saved.menuInlineButtons && saved.menuInlineButtons.vip) || DEFAULT_CONFIG.menuInlineButtons.vip,
       loss: (saved.menuInlineButtons && saved.menuInlineButtons.loss) || DEFAULT_CONFIG.menuInlineButtons.loss,
       hack: (saved.menuInlineButtons && saved.menuInlineButtons.hack) || DEFAULT_CONFIG.menuInlineButtons.hack
-    }
+    },
+    thirdPostSource: saved.thirdPostSource || DEFAULT_CONFIG.thirdPostSource,
+    thirdPostCaption: saved.thirdPostCaption || DEFAULT_CONFIG.thirdPostCaption,
+    approveButton: saved.approveButton || DEFAULT_CONFIG.approveButton,
+    approvedSuccessMessage: saved.approvedSuccessMessage || DEFAULT_CONFIG.approvedSuccessMessage
   };
 }
 
@@ -1354,7 +1366,7 @@ function parseTelegramPostLink(value) {
 }
 
 async function handleSetPostCommand(message, postNumber) {
-  const match = String(message.text || "").trim().match(/^\/setpost[12](?:@\w+)?\s+(\S+)\s*$/i);
+  const match = String(message.text || "").trim().match(/^\/setpost[123](?:@\w+)?\s+(\S+)\s*$/i);
   if (!match) {
     await sendMessage(message.chat.id, `❌ Format:\n/setpost${postNumber} TELEGRAM_POST_LINK`);
     return;
@@ -1368,11 +1380,26 @@ async function handleSetPostCommand(message, postNumber) {
 
   const config = loadConfig();
   if (postNumber === 1) config.firstPostSource = source;
-  else config.secondPostSource = source;
+  else if (postNumber === 2) config.secondPostSource = source;
+  else if (postNumber === 3) config.thirdPostSource = source;
   saveConfig(config);
 
+  const btn = config.approveButton || DEFAULT_CONFIG.approveButton;
+  const thirdButtons = [
+    [
+      {
+        text: btn.text || "✅ APPROVE VIP ACCESS ↗",
+        callback_data: "approve_member",
+        style: btn.style || "success",
+        icon_custom_emoji_id: btn.icon_custom_emoji_id || ""
+      }
+    ]
+  ];
+
+  const buttons = postNumber === 1 ? [] : (postNumber === 2 ? config.apkButtons : thirdButtons);
+
   try {
-    await copySourcePost(message.chat.id, source, postNumber === 1 ? [] : config.apkButtons);
+    await copySourcePost(message.chat.id, source, buttons);
     await sendMessage(message.chat.id, `✅ Post ${postNumber} set ho gayi.`);
   } catch (error) {
     await sendMessage(message.chat.id, `⚠️ Post save ho gayi, lekin test copy fail hui.\n${error.message}`);
@@ -2250,6 +2277,38 @@ async function sendApkWithCaption(chatId) {
   });
 }
 
+async function sendThirdPostWithButton(chatId) {
+  const config = loadConfig();
+  const btn = config.approveButton || DEFAULT_CONFIG.approveButton;
+  const buttonRows = [
+    [
+      {
+        text: btn.text || "✅ APPROVE VIP ACCESS ↗",
+        callback_data: "approve_member",
+        style: btn.style || "success",
+        icon_custom_emoji_id: btn.icon_custom_emoji_id || ""
+      }
+    ]
+  ];
+
+  if (hasSourcePost(config.thirdPostSource)) {
+    try {
+      return await copySourcePost(chatId, config.thirdPostSource, buttonRows);
+    } catch (error) {
+      if (error.message && error.message.includes("can't initiate conversation")) {
+        throw error;
+      }
+      console.error("❌ Third source post copy failed, falling back to text:", error.message);
+    }
+  }
+
+  const caption = config.thirdPostCaption || DEFAULT_CONFIG.thirdPostCaption;
+  return sendMessage(chatId, caption, {
+    parse_mode: "HTML",
+    reply_markup: makeKeyboard(buttonRows)
+  });
+}
+
 async function copyMemberMessageToOwners(message) {
   const user = message.from || {};
   const chatId = message.chat.id;
@@ -2492,6 +2551,14 @@ function adminKeyboard(config = loadConfig()) {
         { text: "🔘 Edit APK Buttons", callback_data: "edit_apk_buttons" }
       ],
       [
+        { text: "⚡ Edit 3rd Post Caption", callback_data: "edit_third_caption" },
+        { text: "🔘 Edit 3rd Button (Style/Emoji)", callback_data: "edit_third_btn" }
+      ],
+      [
+        { text: "🎉 Edit Approve Success Msg", callback_data: "edit_third_success" },
+        { text: "👁 Preview 3rd Post", callback_data: "preview_third_post" }
+      ],
+      [
         { text: "👁 Preview Video", callback_data: "preview_video" },
         { text: "👁 Preview APK", callback_data: "preview_apk" }
       ],
@@ -2583,7 +2650,19 @@ async function showCurrentConfig(chatId) {
 <code>${escapeHtml(config.videoCaption)}</code>
 
 📦 <b>APK Caption:</b>
-<code>${escapeHtml(config.apkCaption)}</code>`,
+<code>${escapeHtml(config.apkCaption)}</code>
+
+⚡ <b>3rd Post Source:</b>
+<code>${escapeHtml(JSON.stringify(config.thirdPostSource, null, 2))}</code>
+
+⚡ <b>3rd Approve Button:</b>
+<code>${escapeHtml(JSON.stringify(config.approveButton, null, 2))}</code>
+
+⚡ <b>3rd Post Caption:</b>
+<code>${escapeHtml(config.thirdPostCaption)}</code>
+
+🎉 <b>Approve Success Message:</b>
+<code>${escapeHtml(config.approvedSuccessMessage)}</code>`,
     { parse_mode: "HTML" }
   );
 }
@@ -2637,6 +2716,42 @@ async function handlePublicCallback(callbackQuery) {
     return true;
   }
 
+  if (data === "approve_member") {
+    await answerCallbackQuery(callbackQuery.id, "VIP Access Activated! 🎉");
+    const user = callbackQuery.from;
+    const config = loadConfig();
+
+    // 1. Permanently register as active bot member
+    vjTrackBotUser(user, chatId, "start");
+    trackBotUser(user, chatId, "start");
+
+    // 2. Send congratulations message with bottom menu
+    const successMsg = config.approvedSuccessMessage || DEFAULT_CONFIG.approvedSuccessMessage;
+    await sendMessage(chatId, successMsg, {
+      parse_mode: "HTML",
+      reply_markup: userReplyKeyboard(false)
+    });
+
+    // 3. Notify owner
+    const { fullName, username } = getUserInfo(user);
+    const userProfileUrl = `tg://user?id=${user.id}`;
+    const usernameDisplay = user.username
+      ? `<a href="https://t.me/${user.username}">@${user.username}</a>`
+      : `<i>No username</i> (<a href="${userProfileUrl}">Open Direct Chat</a>)`;
+
+    await sendOwnerAlert(
+      `🎉 <b>Member VIP Access Activated</b>\n\n👤 Name: <a href="${userProfileUrl}"><b>${escapeHtml(fullName)}</b></a>\n🆔 User ID: <code>${user.id}</code>\n🔗 Username: ${usernameDisplay}\n💬 Chat ID: <code>${chatId}</code>\n\n✅ User ne 3rd button dabakar VIP access activate kiya aur permanent bot member ban gaya!`,
+      {
+        reply_markup: {
+          inline_keyboard: [
+            [{ text: "💬 Open User Chat", url: userProfileUrl }]
+          ]
+        }
+      }
+    );
+    return true;
+  }
+
   return false;
 }
 
@@ -2686,6 +2801,8 @@ async function handleCallbackQuery(callbackQuery) {
             [{ text: "🟢 Edit VIP Message", callback_data: "edit_vip_msg" }],
             [{ text: "💼 Edit Loss Recovery Message", callback_data: "edit_loss_msg" }],
             [{ text: "⚡ Edit Private Hack Message", callback_data: "edit_hack_msg" }],
+            [{ text: "📝 Edit 3rd Post Caption", callback_data: "edit_third_caption" }],
+            [{ text: "🎉 Edit Approve Success Message", callback_data: "edit_third_success" }],
             [{ text: "🔙 Back to Admin Panel", callback_data: "back_to_admin" }]
           ]
         }
@@ -2744,6 +2861,7 @@ async function handleCallbackQuery(callbackQuery) {
             [{ text: "🔵 Edit VIP Inline Button (Colour/Emoji)", callback_data: "edit_vip_btn" }],
             [{ text: "🟢 Edit Loss Recovery Inline Button (Colour/Emoji)", callback_data: "edit_loss_btn" }],
             [{ text: "🔴 Edit Private Hack Inline Button (Colour/Emoji)", callback_data: "edit_hack_btn" }],
+            [{ text: "⚡ Edit 3rd Approve Button (Text/Colour/Emoji)", callback_data: "edit_third_btn" }],
             [{ text: "🔙 Back to Admin Panel", callback_data: "back_to_admin" }]
           ]
         }
@@ -2913,6 +3031,59 @@ Remove:
     return;
   }
 
+  if (data === "preview_third_post") {
+    try {
+      await sendThirdPostWithButton(chatId);
+    } catch (error) {
+      await sendMessage(chatId, `❌ Third post preview error:\n${error.message}`);
+    }
+    return;
+  }
+
+  if (data === "edit_third_caption") {
+    adminStates.set(String(userId), "third_caption");
+    const cfg = loadConfig();
+    await sendMessage(
+      chatId,
+      `⚡ <b>Edit 3rd Post Caption</b>\n\n<b>Current Caption:</b>\n${cfg.thirdPostCaption || DEFAULT_CONFIG.thirdPostCaption}\n\n👉 <i>Naya 3rd post caption bhejo (HTML allowed). Cancel: <code>/cancel</code></i>`,
+      { parse_mode: "HTML" }
+    );
+    return;
+  }
+
+  if (data === "edit_third_btn") {
+    adminStates.set(String(userId), "third_btn");
+    const cfg = loadConfig();
+    const btn = cfg.approveButton || DEFAULT_CONFIG.approveButton;
+    await sendMessage(
+      chatId,
+      `🔘 <b>Edit 3rd Approve Button</b>\n\n` +
+      `<b>Current Button:</b>\n` +
+      `Text: <code>${escapeHtml(btn.text)}</code>\n` +
+      `Style: <code>${escapeHtml(btn.style || "success")}</code> (primary/success/danger)\n` +
+      `Custom Emoji ID: <code>${escapeHtml(btn.icon_custom_emoji_id || "None")}</code>\n\n` +
+      `👉 <b>Naya format bhejo:</b>\n` +
+      `<code>Button Text | style | customEmojiId</code>\n\n` +
+      `Styles: <code>primary</code> (blue), <code>success</code> (green), <code>danger</code> (red)\n` +
+      `<i>Example:</i>\n` +
+      `<code>✅ APPROVE VIP ACCESS ↗ | success | 6069116194604980210</code>\n\n` +
+      `Cancel: <code>/cancel</code>`,
+      { parse_mode: "HTML" }
+    );
+    return;
+  }
+
+  if (data === "edit_third_success") {
+    adminStates.set(String(userId), "third_success");
+    const cfg = loadConfig();
+    await sendMessage(
+      chatId,
+      `🎉 <b>Edit Approve Success Message</b>\n\n<b>Current Message:</b>\n${cfg.approvedSuccessMessage || DEFAULT_CONFIG.approvedSuccessMessage}\n\n👉 <i>Naya success message bhejo jo button dabane par user ko milega (HTML allowed). Cancel: <code>/cancel</code></i>`,
+      { parse_mode: "HTML" }
+    );
+    return;
+  }
+
   if (data === "show_stats") {
     await sendStats(chatId);
     return;
@@ -2997,6 +3168,19 @@ async function handleAdminState(message) {
       };
     }
 
+    if (state === "third_caption") config.thirdPostCaption = text;
+    if (state === "third_success") config.approvedSuccessMessage = text;
+
+    if (state === "third_btn") {
+      const parts = text.split("|").map((s) => s.trim());
+      if (!parts[0]) throw new Error("Button text missing hai.");
+      config.approveButton = {
+        text: parts[0],
+        style: parts[1] || "success",
+        icon_custom_emoji_id: parts[2] || ""
+      };
+    }
+
     saveConfig(config);
     adminStates.delete(userId);
 
@@ -3019,6 +3203,7 @@ async function handleStart(message) {
 
   let videoStatus = "Not sent";
   let apkStatus = "Not sent";
+  let thirdStatus = "Not sent";
 
   try {
     await sendVideoWithLink(chatId);
@@ -3032,6 +3217,13 @@ async function handleStart(message) {
     apkStatus = "APK sent ✅";
   } catch (error) {
     apkStatus = `APK failed ❌ ${error.message}`;
+  }
+
+  try {
+    await sendThirdPostWithButton(chatId);
+    thirdStatus = "3rd Post sent ✅";
+  } catch (error) {
+    thirdStatus = `3rd Post failed ❌ ${error.message}`;
   }
 
   // Send persistent role-based bottom keyboard
@@ -3072,7 +3264,8 @@ Username: ${escapeHtml(username)}
 User ID: <code>${user.id}</code>
 
 🎥 ${escapeHtml(videoStatus)}
-📦 ${escapeHtml(apkStatus)}`
+📦 ${escapeHtml(apkStatus)}
+⚡ ${escapeHtml(thirdStatus)}`
   );
 }
 
@@ -3170,6 +3363,14 @@ async function handleJoinRequest(joinRequest) {
     apkStatus = `APK failed ❌ ${error.message}`;
   }
 
+  let thirdStatus = "Not sent";
+  try {
+    await sendThirdPostWithButton(userChatId);
+    thirdStatus = "3rd Post sent ✅";
+  } catch (error) {
+    thirdStatus = `3rd Post failed ❌ ${error.message}`;
+  }
+
   try {
     await sendMessage(
       userChatId,
@@ -3200,6 +3401,7 @@ async function handleJoinRequest(joinRequest) {
 ✅ ${escapeHtml(verifyStatus)}
 🎥 ${escapeHtml(videoStatus)}
 📦 ${escapeHtml(apkStatus)}
+⚡ ${escapeHtml(thirdStatus)}
 
 ${approveStatus.includes("✅") ? "✅" : "❌"} ${escapeHtml(approveStatus)}`,
     {
@@ -3311,6 +3513,19 @@ async function handleMessage(message) {
 
     if (vjIsCommand(text, "/setpost2")) {
       await handleSetPostCommand(message, 2);
+      return;
+    }
+
+    if (vjIsCommand(text, "/setpost3")) {
+      await handleSetPostCommand(message, 3);
+      return;
+    }
+
+    if (vjIsCommand(text, "/clearpost3")) {
+      const cfg = loadConfig();
+      cfg.thirdPostSource = null;
+      saveConfig(cfg);
+      await sendMessage(message.chat.id, "✅ 3rd Post source post clear kar diya. Ab default/custom caption text message bheja jayega.");
       return;
     }
 

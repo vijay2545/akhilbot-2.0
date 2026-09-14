@@ -115,7 +115,10 @@ https://www.6clubp.com/#/register?invitationCode=44523479915`,
       }
     ]
   ],
-  autoJoinRequest: false
+  autoJoinRequest: false,
+  vipMessage: `🟢 <b>SURESHORT PRIVATE VIP CHANNEL</b> 🟢\n━━━━━━━━━━━━━━━━━━━━━━\n🔔 <b>LIMITED ENTRY FREE</b> 🔔\n\nAapke liye VIP Channel ki exclusive entry open hai.\nDaily accurate signals aur sureshots ke liye niche click karein:\n\n🔴 <b>LIVE SIGNALS & PREDICTIONS</b> 🔴`,
+  lossRecoveryMessage: `💼 <b>PERSONAL 100% LOSS RECOVERY</b> 💼\n━━━━━━━━━━━━━━━━━━━━━━\nAgar aapka kisi bhi platform ya game me loss hua hai, to recovery ke liye direct Admin se connect karein.\n\n✅ 1-on-1 Personal Guidance\n✅ Capital Management & Strategy\n✅ Safe Daily Target Setup\n\n👇 <b>Niche diye gaye button par click karein:</b>`,
+  privateHackMessage: `⚡ <b>PRIVATE HACK & AI SERVER ACCESS</b> ⚡\n━━━━━━━━━━━━━━━━━━━━━━\n🏅 <b>100% Working AI Algorithm</b>\n🔮 <b>Number Sureshot Prediction Tool</b>\n🎰 <b>Live Accurate Trend Signals</b>\n\n1️⃣ <b>Step 1:</b> Niche button se official new account register karein:\n2️⃣ <b>Step 2:</b> Minimum ₹300 deposit karke ID activate karein.\n3️⃣ <b>Step 3:</b> Deposit screenshot bot me bhejein, aapko hack panel access mil jayega.`
 };
 
 const adminStates = new Map();
@@ -1281,7 +1284,10 @@ function loadConfig() {
     apkButtons: usesApkButtonLayout && Array.isArray(saved.apkButtons)
       ? saved.apkButtons
       : DEFAULT_CONFIG.apkButtons,
-    autoJoinRequest: saved.autoJoinRequest !== undefined ? Boolean(saved.autoJoinRequest) : false
+    autoJoinRequest: saved.autoJoinRequest !== undefined ? Boolean(saved.autoJoinRequest) : false,
+    vipMessage: saved.vipMessage || DEFAULT_CONFIG.vipMessage,
+    lossRecoveryMessage: saved.lossRecoveryMessage || DEFAULT_CONFIG.lossRecoveryMessage,
+    privateHackMessage: saved.privateHackMessage || DEFAULT_CONFIG.privateHackMessage
   };
 }
 
@@ -1549,14 +1555,10 @@ async function handleUserButtonPress(message, text) {
   // 1. JOIN VIP
   if (clean === "JOIN VIP" || clean.includes("JOIN VIP") || clean === "VIP") {
     const vipUrl = safeLink(config.vipChannelLink, config.channelInviteLink || "https://t.me/+gVNRVJTtpmc2MmE9");
+    const vipText = config.vipMessage || DEFAULT_CONFIG.vipMessage;
     await sendMessage(
       message.chat.id,
-      `🟢 <b>SURESHORT PRIVATE VIP CHANNEL</b> 🟢\n` +
-      `━━━━━━━━━━━━━━━━━━━━━━\n` +
-      `🔔 <b>LIMITED ENTRY FREE</b> 🔔\n\n` +
-      `Aapke liye VIP Channel ki exclusive entry open hai.\n` +
-      `Daily accurate signals aur sureshots ke liye niche click karein:\n\n` +
-      `🔴 <b>LIVE SIGNALS & PREDICTIONS</b> 🔴`,
+      vipText,
       {
         parse_mode: "HTML",
         reply_markup: {
@@ -1574,15 +1576,10 @@ async function handleUserButtonPress(message, text) {
   // 2. LOSS RECOVERY
   if (clean === "LOSS RECOVERY" || clean.includes("LOSS RECOVERY")) {
     const lossUrl = safeLink(config.lossRecoveryLink, config.adminContactLink || "https://t.me/Rohan_sureshotbot");
+    const lossText = config.lossRecoveryMessage || DEFAULT_CONFIG.lossRecoveryMessage;
     await sendMessage(
       message.chat.id,
-      `💼 <b>PERSONAL 100% LOSS RECOVERY</b> 💼\n` +
-      `━━━━━━━━━━━━━━━━━━━━━━\n` +
-      `Agar aapka kisi bhi platform ya game me loss hua hai, to recovery ke liye direct Admin se connect karein.\n\n` +
-      `✅ 1-on-1 Personal Guidance\n` +
-      `✅ Capital Management & Strategy\n` +
-      `✅ Safe Daily Target Setup\n\n` +
-      `👇 <b>Niche diye gaye button par click karein:</b>`,
+      lossText,
       {
         parse_mode: "HTML",
         reply_markup: {
@@ -1600,16 +1597,10 @@ async function handleUserButtonPress(message, text) {
   // 3. PRIVATE HACK
   if (clean === "PRIVATE HACK" || clean.includes("PRIVATE HACK") || clean.includes("HACK")) {
     const regUrl = safeLink(config.registerLink, "https://www.6clubp.com/#/register?invitationCode=44523479915");
+    const hackText = config.privateHackMessage || DEFAULT_CONFIG.privateHackMessage;
     await sendMessage(
       message.chat.id,
-      `⚡ <b>PRIVATE HACK & AI SERVER ACCESS</b> ⚡\n` +
-      `━━━━━━━━━━━━━━━━━━━━━━\n` +
-      `🏅 <b>100% Working AI Algorithm</b>\n` +
-      `🔮 <b>Number Sureshot Prediction Tool</b>\n` +
-      `🎰 <b>Live Accurate Trend Signals</b>\n\n` +
-      `1️⃣ <b>Step 1:</b> Niche button se official new account register karein:\n` +
-      `2️⃣ <b>Step 2:</b> Minimum ₹300 deposit karke ID activate karein.\n` +
-      `3️⃣ <b>Step 3:</b> Deposit screenshot bot me bhejein, aapko hack panel access mil jayega.`,
+      hackText,
       {
         parse_mode: "HTML",
         reply_markup: {
@@ -2433,6 +2424,9 @@ function adminKeyboard(config = loadConfig()) {
         { text: autoStatus, callback_data: "toggle_auto_join" }
       ],
       [
+        { text: "💬 Edit Menu Messages (VIP / Recovery / Hack)", callback_data: "edit_menu_messages" }
+      ],
+      [
         { text: "🔥 Edit Action Links", callback_data: "edit_action_links" }
       ],
       [
@@ -2627,6 +2621,63 @@ async function handleCallbackQuery(callbackQuery) {
 
   await answerCallbackQuery(callbackQuery.id, "OK");
 
+  if (data === "edit_menu_messages") {
+    await sendMessage(
+      chatId,
+      `💬 <b>Edit Menu Messages</b>\n\nKonsa message edit karna chahte hain? Niche select karein:`,
+      {
+        parse_mode: "HTML",
+        reply_markup: {
+          inline_keyboard: [
+            [{ text: "🟢 Edit VIP Message", callback_data: "edit_vip_msg" }],
+            [{ text: "💼 Edit Loss Recovery Message", callback_data: "edit_loss_msg" }],
+            [{ text: "⚡ Edit Private Hack Message", callback_data: "edit_hack_msg" }],
+            [{ text: "🔙 Back to Admin Panel", callback_data: "back_to_admin" }]
+          ]
+        }
+      }
+    );
+    return;
+  }
+
+  if (data === "back_to_admin") {
+    await sendAdminPanel(chatId);
+    return;
+  }
+
+  if (data === "edit_vip_msg") {
+    adminStates.set(String(userId), "vip_msg");
+    const cfg = loadConfig();
+    await sendMessage(
+      chatId,
+      `🟢 <b>Edit VIP Message</b>\n\n<b>Current Message:</b>\n${cfg.vipMessage || DEFAULT_CONFIG.vipMessage}\n\n👉 <i>Naya VIP message bhejo (HTML allowed). Cancel: <code>/cancel</code></i>`,
+      { parse_mode: "HTML" }
+    );
+    return;
+  }
+
+  if (data === "edit_loss_msg") {
+    adminStates.set(String(userId), "loss_msg");
+    const cfg = loadConfig();
+    await sendMessage(
+      chatId,
+      `💼 <b>Edit Loss Recovery Message</b>\n\n<b>Current Message:</b>\n${cfg.lossRecoveryMessage || DEFAULT_CONFIG.lossRecoveryMessage}\n\n👉 <i>Naya Loss Recovery message bhejo (HTML allowed). Cancel: <code>/cancel</code></i>`,
+      { parse_mode: "HTML" }
+    );
+    return;
+  }
+
+  if (data === "edit_hack_msg") {
+    adminStates.set(String(userId), "hack_msg");
+    const cfg = loadConfig();
+    await sendMessage(
+      chatId,
+      `⚡ <b>Edit Private Hack Message</b>\n\n<b>Current Message:</b>\n${cfg.privateHackMessage || DEFAULT_CONFIG.privateHackMessage}\n\n👉 <i>Naya Private Hack message bhejo (HTML allowed). Cancel: <code>/cancel</code></i>`,
+      { parse_mode: "HTML" }
+    );
+    return;
+  }
+
   if (data === "edit_action_links") {
     adminStates.set(String(userId), "action_links");
     await sendMessage(chatId, formatLinksHelp(loadConfig()), { parse_mode: "HTML" });
@@ -2738,6 +2789,9 @@ async function handleAdminState(message) {
     if (state === "video_buttons") config.videoButtons = parseButtonsFromText(text);
     if (state === "apk_caption") config.apkCaption = text;
     if (state === "apk_buttons") config.apkButtons = parseButtonsFromText(text);
+    if (state === "vip_msg") config.vipMessage = text;
+    if (state === "loss_msg") config.lossRecoveryMessage = text;
+    if (state === "hack_msg") config.privateHackMessage = text;
 
     saveConfig(config);
     adminStates.delete(userId);

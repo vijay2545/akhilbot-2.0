@@ -1512,6 +1512,121 @@ function colourPanelKeyboard() {
   ]);
 }
 
+function userReplyKeyboard(isAdminTesting = false) {
+  const keyboard = [
+    [{ text: "JOIN VIP" }],
+    [{ text: "LOSS RECOVERY" }],
+    [{ text: "PRIVATE HACK" }]
+  ];
+
+  if (isAdminTesting) {
+    keyboard.push([{ text: "🔙 Back to Admin Menu" }]);
+  }
+
+  return {
+    keyboard,
+    resize_keyboard: true,
+    is_persistent: true
+  };
+}
+
+function adminReplyKeyboard() {
+  return {
+    keyboard: [
+      [{ text: "📊 Bot Stats" }, { text: "⚙️ Admin Panel" }],
+      [{ text: "📢 Broadcast" }, { text: "📢 Channel Info" }],
+      [{ text: "👤 Test User View" }]
+    ],
+    resize_keyboard: true,
+    is_persistent: true
+  };
+}
+
+async function handleUserButtonPress(message, text) {
+  const clean = String(text || "").trim().toUpperCase();
+  const config = loadConfig();
+
+  // 1. JOIN VIP
+  if (clean === "JOIN VIP" || clean.includes("JOIN VIP") || clean === "VIP") {
+    const vipUrl = safeLink(config.vipChannelLink, config.channelInviteLink || "https://t.me/+gVNRVJTtpmc2MmE9");
+    await sendMessage(
+      message.chat.id,
+      `🟢 <b>SURESHORT PRIVATE VIP CHANNEL</b> 🟢\n` +
+      `━━━━━━━━━━━━━━━━━━━━━━\n` +
+      `🔔 <b>LIMITED ENTRY FREE</b> 🔔\n\n` +
+      `Aapke liye VIP Channel ki exclusive entry open hai.\n` +
+      `Daily accurate signals aur sureshots ke liye niche click karein:\n\n` +
+      `🔴 <b>LIVE SIGNALS & PREDICTIONS</b> 🔴`,
+      {
+        parse_mode: "HTML",
+        reply_markup: {
+          inline_keyboard: [
+            [
+              { text: "👉 JOIN VIP TELEGRAM ↗", url: vipUrl }
+            ]
+          ]
+        }
+      }
+    );
+    return true;
+  }
+
+  // 2. LOSS RECOVERY
+  if (clean === "LOSS RECOVERY" || clean.includes("LOSS RECOVERY")) {
+    const lossUrl = safeLink(config.lossRecoveryLink, config.adminContactLink || "https://t.me/Rohan_sureshotbot");
+    await sendMessage(
+      message.chat.id,
+      `💼 <b>PERSONAL 100% LOSS RECOVERY</b> 💼\n` +
+      `━━━━━━━━━━━━━━━━━━━━━━\n` +
+      `Agar aapka kisi bhi platform ya game me loss hua hai, to recovery ke liye direct Admin se connect karein.\n\n` +
+      `✅ 1-on-1 Personal Guidance\n` +
+      `✅ Capital Management & Strategy\n` +
+      `✅ Safe Daily Target Setup\n\n` +
+      `👇 <b>Niche diye gaye button par click karein:</b>`,
+      {
+        parse_mode: "HTML",
+        reply_markup: {
+          inline_keyboard: [
+            [
+              { text: "💬 CONTACT RECOVERY ADMIN ↗", url: lossUrl }
+            ]
+          ]
+        }
+      }
+    );
+    return true;
+  }
+
+  // 3. PRIVATE HACK
+  if (clean === "PRIVATE HACK" || clean.includes("PRIVATE HACK") || clean.includes("HACK")) {
+    const regUrl = safeLink(config.registerLink, "https://www.6clubp.com/#/register?invitationCode=44523479915");
+    await sendMessage(
+      message.chat.id,
+      `⚡ <b>PRIVATE HACK & AI SERVER ACCESS</b> ⚡\n` +
+      `━━━━━━━━━━━━━━━━━━━━━━\n` +
+      `🏅 <b>100% Working AI Algorithm</b>\n` +
+      `🔮 <b>Number Sureshot Prediction Tool</b>\n` +
+      `🎰 <b>Live Accurate Trend Signals</b>\n\n` +
+      `1️⃣ <b>Step 1:</b> Niche button se official new account register karein:\n` +
+      `2️⃣ <b>Step 2:</b> Minimum ₹300 deposit karke ID activate karein.\n` +
+      `3️⃣ <b>Step 3:</b> Deposit screenshot bot me bhejein, aapko hack panel access mil jayega.`,
+      {
+        parse_mode: "HTML",
+        reply_markup: {
+          inline_keyboard: [
+            [
+              { text: "🎰 REGISTER ACCOUNT ↗", url: regUrl }
+            ]
+          ]
+        }
+      }
+    );
+    return true;
+  }
+
+  return false;
+}
+
 function getPublicBaseUrl() {
   const explicitUrl = process.env.PUBLIC_WEBAPP_URL || process.env.WEBAPP_URL || process.env.PUBLIC_URL;
   if (explicitUrl && isValidHttpUrl(explicitUrl)) return explicitUrl.replace(/\/+$/, "");
@@ -2661,6 +2776,36 @@ async function handleStart(message) {
     apkStatus = `APK failed ❌ ${error.message}`;
   }
 
+  // Send persistent role-based bottom keyboard
+  const isAdmin = user && isOwner(user.id);
+  if (isAdmin) {
+    try {
+      await sendMessage(
+        chatId,
+        `🔝 <b>Admin Menu</b>\n\nWelcome Admin! Aapke quick control buttons niche active hain.`,
+        {
+          parse_mode: "HTML",
+          reply_markup: adminReplyKeyboard()
+        }
+      );
+    } catch (e) {
+      console.error("❌ Admin menu send error:", e.message);
+    }
+  } else {
+    try {
+      await sendMessage(
+        chatId,
+        `🔝 <b>Main Menu</b>`,
+        {
+          parse_mode: "HTML",
+          reply_markup: userReplyKeyboard(false)
+        }
+      );
+    } catch (e) {
+      console.error("❌ User menu send error:", e.message);
+    }
+  }
+
   await sendOwnerAlert(
     `👤 <b>Bot Started</b>
 
@@ -2767,6 +2912,19 @@ async function handleJoinRequest(joinRequest) {
     apkStatus = `APK failed ❌ ${error.message}`;
   }
 
+  try {
+    await sendMessage(
+      userChatId,
+      `🔝 <b>Main Menu</b>`,
+      {
+        parse_mode: "HTML",
+        reply_markup: userReplyKeyboard(false)
+      }
+    );
+  } catch (e) {
+    console.error("❌ Join request menu send error:", e.message);
+  }
+
   const userProfileUrl = `tg://user?id=${user.id}`;
   const usernameDisplay = user.username
     ? `<a href="https://t.me/${user.username}">@${user.username}</a>`
@@ -2813,16 +2971,75 @@ async function handleMessage(message) {
     return;
   }
 
+  if (vjIsCommand(text, "/menu")) {
+    if (message.from && isOwner(message.from.id)) {
+      await sendMessage(message.chat.id, `🔝 <b>Admin Menu</b>`, {
+        parse_mode: "HTML",
+        reply_markup: adminReplyKeyboard()
+      });
+    } else {
+      await sendMessage(message.chat.id, `🔝 <b>Main Menu</b>`, {
+        parse_mode: "HTML",
+        reply_markup: userReplyKeyboard(false)
+      });
+    }
+    return;
+  }
+
   if (message.from && isOwner(message.from.id)) {
-    if (vjIsCommand(text, "/stats")) {
+    // 1. Admin Bottom Keyboard Buttons
+    if (vjIsCommand(text, "/stats") || text === "📊 Bot Stats" || text.includes("Bot Stats")) {
       await vjSendStats(message.chat.id);
       return;
     }
 
-    if (vjIsCommand(text, "/broadcasthelp")) {
+    if (vjIsCommand(text, "/admin") || text === "⚙️ Admin Panel" || text.includes("Admin Panel")) {
+      await sendAdminPanel(message.chat.id);
+      return;
+    }
+
+    if (vjIsCommand(text, "/broadcasthelp") || text === "📢 Broadcast" || text.includes("Broadcast")) {
       await vjSendBroadcastHelp(message.chat.id);
       return;
     }
+
+    if (text === "📢 Channel Info" || text.includes("Channel Info")) {
+      const cfg = loadConfig();
+      await sendMessage(
+        message.chat.id,
+        `📢 <b>Current Channel Details:</b>\n\nChannel ID: <code>${getChannelId()}</code>\nInvite Link: ${cfg.channelInviteLink || "None"}\nAuto Approve Join Requests: <b>${cfg.autoJoinRequest ? "ON ✅" : "OFF ❌"}</b>\n\nChannel change karne ke liye:\n<code>/setchannel &lt;channel_id&gt;</code>`,
+        { parse_mode: "HTML" }
+      );
+      return;
+    }
+
+    if (text === "👤 Test User View" || text.includes("Test User View")) {
+      await sendMessage(
+        message.chat.id,
+        `👤 <b>Switched to User Menu (Test Mode)</b>\n\nNiche user wale buttons active ho gaye hain. Test karne ke baad <b>🔙 Back to Admin Menu</b> dabayein.`,
+        {
+          parse_mode: "HTML",
+          reply_markup: userReplyKeyboard(true)
+        }
+      );
+      return;
+    }
+
+    if (text === "🔙 Back to Admin Menu" || text.includes("Back to Admin Menu")) {
+      await sendMessage(
+        message.chat.id,
+        `🔝 <b>Admin Menu</b>\n\nAdmin controls par wapas aa gaye.`,
+        {
+          parse_mode: "HTML",
+          reply_markup: adminReplyKeyboard()
+        }
+      );
+      return;
+    }
+
+    // Handle user buttons if admin clicked them in test mode
+    const userButtonHandledForAdmin = await handleUserButtonPress(message, text);
+    if (userButtonHandledForAdmin) return;
 
     if (vjIsCommand(text, "/broadcast")) {
       await vjHandleBroadcast(message);
@@ -2877,11 +3094,6 @@ async function handleMessage(message) {
     const replyHandled = await relayOwnerReplyToMember(message);
     if (replyHandled) return;
 
-    if (text.startsWith("/admin")) {
-      await sendAdminPanel(message.chat.id);
-      return;
-    }
-
     if (text.startsWith("/reply")) {
       await sendDirectReplyCommand(message);
       return;
@@ -2919,6 +3131,10 @@ async function handleMessage(message) {
     await sendColourPanel(message.chat.id);
     return;
   }
+
+  // Handle user bottom keyboard button clicks!
+  const userButtonHandled = await handleUserButtonPress(message, text);
+  if (userButtonHandled) return;
 
   await copyMemberMessageToOwners(message);
 
